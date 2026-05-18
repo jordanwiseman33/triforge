@@ -14,13 +14,6 @@ Opens the user's email client rather than capturing tickets server-side. Accepta
 
 ---
 
-### No README
-No setup/run/deploy instructions checked in. New environment = guess.
-
-**Fix:** Add `README.md` covering `.env` setup, `npm run dev`, Firebase project creation, and Strava app registration (callback domain = `localhost`).
-
----
-
 ### Sparse git history; no CI
 Two commits exist (`TriForge v1` and a 2026-05-18 catch-up snapshot). Going forward, commit incrementally so `git blame` and rollback are useful. No CI is configured either.
 
@@ -43,3 +36,4 @@ Two commits exist (`TriForge v1` and a 2026-05-18 catch-up snapshot). Going forw
 - ✅ **Firebase Functions `anthropic-beta` header** — Corrected from `web-search-1` to `web-search-2025-03-05` so the Firebase Functions proxy matches `server.js`.
 - ✅ **Opus model fallback bumped to 4.7** — `src/App.jsx:534` and `.env.example` now default to `claude-opus-4-7`. Sonnet stays at `claude-sonnet-4-6` (current latest).
 - ✅ **API error handling** — `apiErrorMsg` was already branching on 400/401/429/5xx, but no caller read the response body. Added `handleApiResponse` helper that reads the body on `!r.ok`, logs Anthropic's error message via `console.error`, attaches it as `detail`, and surfaces it in the 400 user message. Replaced four duplicated `if (!r.ok)` blocks at the four `/api/claude` callsites.
+- ✅ **README** — Quick start, env var reference, setup checklist for new environments, scripts, proxy options, deploy notes, project layout.
