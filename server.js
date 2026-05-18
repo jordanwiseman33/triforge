@@ -43,6 +43,47 @@ app.post('/api/claude', (req, res) => {
   apiReq.end();
 });
 
+// ── Support form (Resend) ──
+app.post('/api/support', async (req, res) => {
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set. Add it to .env to enable the support form.');
+    return res.status(500).json({ error: 'Support is misconfigured on the server.' });
+  }
+  const { from, subject, message } = req.body || {};
+  if (!subject || !message) {
+    return res.status(400).json({ error: 'Subject and message are required.' });
+  }
+  const toEmail = process.env.SUPPORT_TO_EMAIL || 'TriForgeTraining@gmail.com';
+  const fromEmail = process.env.SUPPORT_FROM_EMAIL || 'TriForge Support <onboarding@resend.dev>';
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: toEmail,
+        reply_to: from || undefined,
+        subject: `[TriForge Support] ${subject}`,
+        text: `From: ${from || 'unknown user'}\n\n${message}\n\n---\nSent from TriForge app`,
+      }),
+    });
+    if (!r.ok) {
+      const body = await r.text();
+      console.error('Resend API error', r.status, body);
+      let detail = '';
+      try { detail = (JSON.parse(body).message) || ''; } catch (_) {}
+      return res.status(502).json({ error: 'Failed to send.', detail });
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Support send error:', e.message);
+    res.status(502).json({ error: 'Failed to reach email service.' });
+  }
+});
+
 // ── Strava OAuth ──
 const pendingStravaTokens = new Map();
 

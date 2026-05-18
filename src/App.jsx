@@ -73,6 +73,7 @@ export default function App() {
   // Support
   var [supportSubject, setSupportSubject] = useState("");
   var [supportMsg, setSupportMsg] = useState("");
+  var [supportBusy, setSupportBusy] = useState(false);
   // Reviews
   var [reviewText, setReviewText] = useState("");
   var [reviewStars, setReviewStars] = useState(5);
@@ -333,10 +334,19 @@ export default function App() {
   // ── Support Ticket ──
   function submitSupport() {
     if (!supportSubject.trim() || !supportMsg.trim()) { flash("Fill in subject and message."); return; }
-    // Create mailto link and open it (works in browser; in production use a serverless email function)
-    var mailto = "mailto:" + (import.meta.env.VITE_SUPPORT_EMAIL || "TriForgeTraining@gmail.com") + "?subject=" + encodeURIComponent("[TriForge Support] " + supportSubject) + "&body=" + encodeURIComponent("From: " + user + "\n\n" + supportMsg + "\n\n---\nSent from TriForge app");
-    window.open(mailto, "_blank");
-    setSupportSubject(""); setSupportMsg(""); flash("Support request opened in your email client!");
+    setSupportBusy(true);
+    fetch("/api/support", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from: user, subject: supportSubject, message: supportMsg }),
+    }).then(handleApiResponse).then(function() {
+      setSupportSubject(""); setSupportMsg(""); setSupportBusy(false);
+      flash("Support request sent! We'll get back to you soon.");
+    }).catch(function(e) {
+      setSupportBusy(false);
+      var fallback = import.meta.env.VITE_SUPPORT_EMAIL || "TriForgeTraining@gmail.com";
+      flash((e && e.detail) ? ("Send failed: " + e.detail) : ("Send failed. Email " + fallback + " directly."));
+    });
   }
 
   // ── Reviews ──
@@ -1212,8 +1222,8 @@ export default function App() {
           </select>
           <div style={lblS}>Describe Your Issue</div>
           <textarea style={Object.assign({}, inp, { resize: "vertical", lineHeight: 1.6, marginBottom: 12 })} rows={4} value={supportMsg} onChange={function(e) { setSupportMsg(e.target.value); }} placeholder="Tell us what happened, what you expected, and any steps to reproduce the issue..." />
-          <button onClick={submitSupport} style={Object.assign({}, btnS, { background: "#EF4444" })}>SEND TO SUPPORT</button>
-          <div style={{ fontSize: 11, color: tL, marginTop: 8 }}>This opens your email client addressed to our support team. You can also email us directly at TriForgeTraining@gmail.com</div>
+          <button onClick={submitSupport} disabled={supportBusy} style={Object.assign({}, btnS, { background: "#EF4444", opacity: supportBusy ? 0.6 : 1 })}>{supportBusy ? "SENDING..." : "SEND TO SUPPORT"}</button>
+          <div style={{ fontSize: 11, color: tL, marginTop: 8 }}>Your message goes straight to our support team. You can also email us directly at TriForgeTraining@gmail.com</div>
         </div>
       </div>}
 

@@ -5,15 +5,6 @@ _Last updated: 2026-05-18_
 
 ## OPEN
 
-### Support form is still a `mailto:`
-**File:** `src/App.jsx:321`
-
-Opens the user's email client rather than capturing tickets server-side. Acceptable for MVP, not production. The fallback email is now `TriForgeTraining@gmail.com`.
-
-**Fix:** Add a serverless support endpoint (Resend/SendGrid) when ready to scale.
-
----
-
 ### Sparse git history
 Now committing incrementally (good). Older work is bundled in the `Catch repo up` snapshot — `git blame` won't be useful for lines that landed before 2026-05-18, but going forward it will be.
 
@@ -38,3 +29,4 @@ Now committing incrementally (good). Older work is bundled in the `Catch repo up
 - ✅ **API error handling** — `apiErrorMsg` was already branching on 400/401/429/5xx, but no caller read the response body. Added `handleApiResponse` helper that reads the body on `!r.ok`, logs Anthropic's error message via `console.error`, attaches it as `detail`, and surfaces it in the 400 user message. Replaced four duplicated `if (!r.ok)` blocks at the four `/api/claude` callsites.
 - ✅ **README** — Quick start, env var reference, setup checklist for new environments, scripts, proxy options, deploy notes, project layout.
 - ✅ **CI** — `.github/workflows/ci.yml` runs `npm ci && npm run build` on push to `main` and on PRs (Node 20, npm cache). First run on `ba60e10` passed.
+- ✅ **Support form** — `POST /api/support` in `server.js` now sends tickets through Resend. Client posts to the endpoint with `{from, subject, message}`; user email goes in `reply_to` so replies thread back. Requires `RESEND_API_KEY` env var. Until a domain is verified in Resend, sender is `onboarding@resend.dev` (sandbox).

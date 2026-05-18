@@ -21,7 +21,10 @@ Copy `.env.example` to `.env` and set the values below. Anything missing makes t
 | `ANTHROPIC_API_KEY` | AI plan builder, coach chat, race verification | https://console.anthropic.com/ |
 | `VITE_MODEL_OPUS` | Optional override; defaults to `claude-opus-4-7` | — |
 | `VITE_MODEL_SONNET` | Optional override; defaults to `claude-sonnet-4-6` | — |
-| `VITE_SUPPORT_EMAIL` | Address in the in-app support form | — |
+| `VITE_SUPPORT_EMAIL` | Fallback "email us directly" address shown in the support form | — |
+| `RESEND_API_KEY` | In-app support form sends through Resend | https://resend.com/api-keys |
+| `SUPPORT_TO_EMAIL` | Where support tickets land (defaults to `TriForgeTraining@gmail.com`) | — |
+| `SUPPORT_FROM_EMAIL` | Sender. Defaults to `onboarding@resend.dev` (Resend sandbox). Swap to a verified domain sender once you verify `triforgetraining.com` in Resend. | — |
 | `VITE_FIREBASE_*` (6 vars) | Auth + Firestore persistence | Firebase console → Project Settings → Your apps → Web app SDK config |
 | `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` | Strava activity sync | https://www.strava.com/settings/api |
 | `STRAVA_REDIRECT_URI` | Strava OAuth callback | Defaults to `http://localhost:3000/api/strava/callback` |
