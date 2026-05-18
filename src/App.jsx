@@ -1,122 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { auth, db } from './firebase.js';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 
-var FOODS = [
-  {cat:"Fruit",name:"Apple (medium)",serv:"1 medium",cal:95,pro:0,carb:25,fat:0,fib:4,sug:19},
-  {cat:"Fruit",name:"Banana",serv:"1 medium",cal:105,pro:1,carb:27,fat:0,fib:3,sug:14},
-  {cat:"Fruit",name:"Orange",serv:"1 medium",cal:62,pro:1,carb:15,fat:0,fib:3,sug:12},
-  {cat:"Fruit",name:"Strawberries",serv:"1 cup",cal:49,pro:1,carb:12,fat:0,fib:3,sug:7},
-  {cat:"Fruit",name:"Blueberries",serv:"1 cup",cal:84,pro:1,carb:21,fat:0,fib:4,sug:15},
-  {cat:"Fruit",name:"Raspberries",serv:"1 cup",cal:64,pro:1,carb:15,fat:1,fib:8,sug:5},
-  {cat:"Fruit",name:"Blackberries",serv:"1 cup",cal:62,pro:2,carb:14,fat:1,fib:8,sug:7},
-  {cat:"Fruit",name:"Cherries",serv:"1 cup",cal:87,pro:1,carb:22,fat:0,fib:3,sug:18},
-  {cat:"Fruit",name:"Grapes",serv:"1 cup",cal:104,pro:1,carb:27,fat:0,fib:1,sug:23},
-  {cat:"Fruit",name:"Watermelon",serv:"1 cup diced",cal:46,pro:1,carb:12,fat:0,fib:1,sug:9},
-  {cat:"Fruit",name:"Cantaloupe",serv:"1 cup diced",cal:54,pro:1,carb:13,fat:0,fib:1,sug:12},
-  {cat:"Fruit",name:"Mango",serv:"1 cup",cal:99,pro:1,carb:25,fat:1,fib:3,sug:23},
-  {cat:"Fruit",name:"Pineapple",serv:"1 cup",cal:82,pro:1,carb:22,fat:0,fib:2,sug:16},
-  {cat:"Fruit",name:"Avocado",serv:"1/2 medium",cal:120,pro:1,carb:6,fat:11,fib:5,sug:0},
-  {cat:"Fruit",name:"Peach",serv:"1 medium",cal:59,pro:1,carb:14,fat:0,fib:2,sug:13},
-  {cat:"Fruit",name:"Pear",serv:"1 medium",cal:101,pro:1,carb:27,fat:0,fib:6,sug:17},
-  {cat:"Fruit",name:"Kiwi",serv:"1 medium",cal:42,pro:1,carb:10,fat:0,fib:2,sug:6},
-  {cat:"Fruit",name:"Grapefruit",serv:"1/2 medium",cal:52,pro:1,carb:13,fat:0,fib:2,sug:8},
-  {cat:"Fruit",name:"Plum",serv:"1 medium",cal:30,pro:0,carb:8,fat:0,fib:1,sug:7},
-  {cat:"Vegetable",name:"Broccoli",serv:"1 cup",cal:55,pro:4,carb:11,fat:1,fib:5,sug:2},
-  {cat:"Vegetable",name:"Spinach (raw)",serv:"2 cups",cal:14,pro:2,carb:2,fat:0,fib:1,sug:0},
-  {cat:"Vegetable",name:"Sweet Potato",serv:"1 medium",cal:103,pro:2,carb:24,fat:0,fib:4,sug:7},
-  {cat:"Vegetable",name:"Potato (baked)",serv:"1 medium",cal:161,pro:4,carb:37,fat:0,fib:4,sug:2},
-  {cat:"Vegetable",name:"Carrots",serv:"1 cup",cal:52,pro:1,carb:12,fat:0,fib:4,sug:6},
-  {cat:"Vegetable",name:"Green Beans",serv:"1 cup",cal:31,pro:2,carb:7,fat:0,fib:3,sug:3},
-  {cat:"Vegetable",name:"Asparagus",serv:"6 spears",cal:20,pro:2,carb:4,fat:0,fib:2,sug:1},
-  {cat:"Vegetable",name:"Bell Pepper",serv:"1 medium",cal:31,pro:1,carb:7,fat:0,fib:2,sug:5},
-  {cat:"Vegetable",name:"Tomato",serv:"1 medium",cal:22,pro:1,carb:5,fat:0,fib:1,sug:3},
-  {cat:"Vegetable",name:"Corn on Cob",serv:"1 ear",cal:88,pro:3,carb:19,fat:1,fib:2,sug:6},
-  {cat:"Vegetable",name:"Cauliflower",serv:"1 cup",cal:27,pro:2,carb:5,fat:0,fib:2,sug:2},
-  {cat:"Vegetable",name:"Zucchini",serv:"1 cup",cal:17,pro:1,carb:3,fat:0,fib:1,sug:3},
-  {cat:"Vegetable",name:"Cucumber",serv:"1 cup",cal:16,pro:1,carb:4,fat:0,fib:1,sug:2},
-  {cat:"Vegetable",name:"Kale",serv:"1 cup",cal:33,pro:3,carb:6,fat:1,fib:1,sug:2},
-  {cat:"Vegetable",name:"Brussels Sprouts",serv:"1 cup",cal:56,pro:4,carb:11,fat:1,fib:4,sug:3},
-  {cat:"Vegetable",name:"Celery",serv:"2 stalks",cal:13,pro:1,carb:3,fat:0,fib:1,sug:1},
-  {cat:"Vegetable",name:"Mushrooms",serv:"1 cup",cal:21,pro:3,carb:3,fat:0,fib:1,sug:2},
-  {cat:"Vegetable",name:"Edamame",serv:"1 cup",cal:188,pro:18,carb:14,fat:8,fib:8,sug:3},
-  {cat:"Vegetable",name:"Beets",serv:"1 cup",cal:58,pro:2,carb:13,fat:0,fib:4,sug:9},
-  {cat:"Chicken",name:"Chicken Breast (grilled)",serv:"6 oz",cal:281,pro:53,carb:0,fat:6,fib:0,sug:0},
-  {cat:"Chicken",name:"Chicken Breast (fried)",serv:"6 oz",cal:390,pro:46,carb:12,fat:17,fib:0,sug:0},
-  {cat:"Chicken",name:"Chicken Thigh (grilled)",serv:"1 thigh",cal:230,pro:28,carb:0,fat:13,fib:0,sug:0},
-  {cat:"Chicken",name:"Chicken Thigh (fried)",serv:"1 thigh",cal:318,pro:25,carb:9,fat:20,fib:0,sug:0},
-  {cat:"Chicken",name:"Chicken Wing (3)",serv:"3 wings",cal:320,pro:27,carb:0,fat:23,fib:0,sug:0},
-  {cat:"Chicken",name:"Chicken Drumstick (2)",serv:"2 drumsticks",cal:296,pro:36,carb:0,fat:16,fib:0,sug:0},
-  {cat:"Chicken",name:"Chicken Tenders (fried)",serv:"4 pieces",cal:360,pro:28,carb:20,fat:18,fib:1,sug:1},
-  {cat:"Chicken",name:"Rotisserie Chicken",serv:"6 oz",cal:310,pro:42,carb:0,fat:15,fib:0,sug:0},
-  {cat:"Beef",name:"Ribeye Steak",serv:"8 oz",cal:544,pro:48,carb:0,fat:38,fib:0,sug:0},
-  {cat:"Beef",name:"Sirloin Steak",serv:"8 oz",cal:408,pro:52,carb:0,fat:21,fib:0,sug:0},
-  {cat:"Beef",name:"Filet Mignon",serv:"6 oz",cal:348,pro:42,carb:0,fat:18,fib:0,sug:0},
-  {cat:"Beef",name:"Ground Beef 80/20",serv:"6 oz",cal:426,pro:38,carb:0,fat:30,fib:0,sug:0},
-  {cat:"Beef",name:"Ground Beef 90/10",serv:"6 oz",cal:332,pro:42,carb:0,fat:18,fib:0,sug:0},
-  {cat:"Beef",name:"Chuck Roast",serv:"6 oz",cal:396,pro:42,carb:0,fat:24,fib:0,sug:0},
-  {cat:"Beef",name:"Brisket",serv:"6 oz",cal:408,pro:40,carb:0,fat:27,fib:0,sug:0},
-  {cat:"Beef",name:"NY Strip",serv:"8 oz",cal:480,pro:50,carb:0,fat:30,fib:0,sug:0},
-  {cat:"Beef",name:"T-Bone",serv:"8 oz",cal:496,pro:46,carb:0,fat:34,fib:0,sug:0},
-  {cat:"Pork",name:"Pork Chop (grilled)",serv:"6 oz",cal:310,pro:42,carb:0,fat:15,fib:0,sug:0},
-  {cat:"Pork",name:"Pork Tenderloin",serv:"6 oz",cal:248,pro:44,carb:0,fat:7,fib:0,sug:0},
-  {cat:"Pork",name:"Pulled Pork",serv:"6 oz",cal:380,pro:36,carb:8,fat:22,fib:0,sug:6},
-  {cat:"Pork",name:"Bacon (3 slices)",serv:"3 slices",cal:129,pro:9,carb:0,fat:10,fib:0,sug:0},
-  {cat:"Pork",name:"Baby Back Ribs",serv:"6 ribs",cal:540,pro:36,carb:0,fat:42,fib:0,sug:0},
-  {cat:"Pork",name:"Pork Loin Roast",serv:"6 oz",cal:270,pro:44,carb:0,fat:10,fib:0,sug:0},
-  {cat:"Fish",name:"Salmon Fillet",serv:"6 oz",cal:354,pro:38,carb:0,fat:22,fib:0,sug:0},
-  {cat:"Fish",name:"Tuna Steak",serv:"6 oz",cal:244,pro:52,carb:0,fat:2,fib:0,sug:0},
-  {cat:"Fish",name:"Tilapia",serv:"6 oz",cal:218,pro:44,carb:0,fat:4,fib:0,sug:0},
-  {cat:"Fish",name:"Cod",serv:"6 oz",cal:186,pro:40,carb:0,fat:2,fib:0,sug:0},
-  {cat:"Fish",name:"Shrimp",serv:"6 oz",cal:168,pro:36,carb:0,fat:2,fib:0,sug:0},
-  {cat:"Fish",name:"Catfish (grilled)",serv:"6 oz",cal:230,pro:38,carb:0,fat:8,fib:0,sug:0},
-  {cat:"Fish",name:"Trout",serv:"6 oz",cal:280,pro:38,carb:0,fat:12,fib:0,sug:0},
-  {cat:"Fish",name:"Walleye",serv:"6 oz",cal:196,pro:40,carb:0,fat:3,fib:0,sug:0},
-  {cat:"Other",name:"Eggs (2 whole)",serv:"2 large",cal:143,pro:12,carb:1,fat:10,fib:0,sug:1},
-  {cat:"Other",name:"Egg Whites (3)",serv:"3 whites",cal:51,pro:11,carb:0,fat:0,fib:0,sug:0},
-  {cat:"Other",name:"White Rice",serv:"1 cup",cal:206,pro:4,carb:45,fat:0,fib:1,sug:0},
-  {cat:"Other",name:"Brown Rice",serv:"1 cup",cal:216,pro:5,carb:45,fat:2,fib:4,sug:1},
-  {cat:"Other",name:"Pasta",serv:"1 cup",cal:220,pro:8,carb:43,fat:1,fib:3,sug:1},
-  {cat:"Other",name:"Oatmeal",serv:"1 cup",cal:166,pro:6,carb:28,fat:4,fib:4,sug:1},
-  {cat:"Other",name:"Peanut Butter",serv:"2 tbsp",cal:190,pro:7,carb:7,fat:16,fib:2,sug:3},
-  {cat:"Other",name:"Greek Yogurt",serv:"1 cup",cal:130,pro:22,carb:9,fat:0,fib:0,sug:7},
-  {cat:"Other",name:"Protein Shake",serv:"1 scoop",cal:120,pro:24,carb:3,fat:1,fib:0,sug:1},
-  {cat:"Other",name:"Black Beans",serv:"1/2 cup",cal:114,pro:8,carb:20,fat:0,fib:8,sug:0},
-  {cat:"Other",name:"Quinoa",serv:"1 cup",cal:222,pro:8,carb:39,fat:4,fib:5,sug:2},
-  {cat:"Other",name:"Turkey Breast",serv:"4 oz",cal:120,pro:24,carb:2,fat:1,fib:0,sug:1},
-  {cat:"Other",name:"Venison",serv:"6 oz",cal:258,pro:50,carb:0,fat:6,fib:0,sug:0}
-];
+import { FOODS, CATS, DAYNAMES, SPORTS, RACE_TYPES, TERRAIN_OPTS, SWIM_TYPE_OPTS, BODY_TYPES, TIERS, SMS_PRICE, SMS_TRIAL_DAYS } from './data.js';
 
-var CATS = ["Fruit","Vegetable","Chicken","Beef","Pork","Fish","Other"];
-var DAYNAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-var SPORTS = [
-  {id:"triathlon",name:"Triathlon",disc:["swim","bike","run"],icon:"S/B/R"},
-  {id:"duathlon",name:"Duathlon",disc:["bike","run"],icon:"B/R"},
-  {id:"aquathlon",name:"Aquathlon",disc:["swim","run"],icon:"S/R"},
-  {id:"marathon",name:"Marathon / Running",disc:["run"],icon:"RUN"},
-  {id:"ultra",name:"Ultra Marathon",disc:["run"],icon:"ULTRA"},
-  {id:"cycling",name:"Century / Cycling",disc:["bike"],icon:"BIKE"},
-  {id:"swim",name:"Open Water / Swim",disc:["swim"],icon:"SWIM"}
-];
-var RACE_TYPES = {
-  triathlon:["Super Sprint Tri","Sprint Tri","Olympic Tri","Half Ironman 70.3","Ironman 140.6"],
-  duathlon:["Sprint Du","Standard Du","Long Du","Powerman"],
-  aquathlon:["Sprint Aquathlon","Standard Aquathlon","Long Aquathlon"],
-  marathon:["5K","10K","15K","10 Mile","Half Marathon","Marathon"],
-  ultra:["50K","50 Mile","100K","100 Mile","24 Hour","Backyard Ultra"],
-  cycling:["25 Mile","50 Mile","Metric Century (62mi)","Century (100mi)","Double Century","Gran Fondo"],
-  swim:["1 Mile","1.2 Mile","2.4 Mile","5K Swim","10K Swim"]
-};
-var TERRAIN_OPTS = ["Flat","Rolling hills","Hilly","Mountainous","Mixed","Trail/Off-road","Track","Unknown"];
-var SWIM_TYPE_OPTS = ["Open water - lake","Open water - ocean","Open water - river (downstream)","Open water - river (upstream)","Pool","Unknown"];
-var BODY_TYPES = [{v:"slim",l:"Slim / Lean"},{v:"athletic",l:"Athletic / Muscular"},{v:"average",l:"Average Build"},{v:"stocky",l:"Stocky / Heavy-set"},{v:"large",l:"Large / Big-boned"}];
-
-// ── Subscription tiers ──
-var TIERS = {
-  trial: { name: "Free Trial", price: 0, maxRaces: 0, maxMods: 0, hasPlanBuilder: false, hasCoach: false, durationDays: 7 },
-  basic: { name: "Basic", price: 9.99, maxRaces: 5, maxMods: 5, hasPlanBuilder: true, hasCoach: true, smsPrice: 3.99 },
-  pro: { name: "Pro", price: 16.99, maxRaces: 15, maxMods: 15, hasPlanBuilder: true, hasCoach: true, smsPrice: 2.99 }
-};
-var SMS_PRICE = 3.99;
-var SMS_TRIAL_DAYS = 3;
 
 export default function App() {
   var [user, setUser] = useState("");
@@ -179,9 +67,9 @@ export default function App() {
   var [wlWeight, setWlWeight] = useState("");
   var [hydDate, setHydDate] = useState(new Date().toISOString().split("T")[0]);
   var [hydOz, setHydOz] = useState("");
-  // Integrations
-  var [garminConnected, setGarminConnected] = useState(false);
-  var [stravaConnected, setStravaConnected] = useState(false);
+  // Strava
+  var [stravaData, setStravaData] = useState(null);
+  var [syncBusy, setSyncBusy] = useState(false);
   // Support
   var [supportSubject, setSupportSubject] = useState("");
   var [supportMsg, setSupportMsg] = useState("");
@@ -194,14 +82,32 @@ export default function App() {
 
   useEffect(function() {
     var link = document.createElement("link"); link.href = "https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"; link.rel = "stylesheet"; document.head.appendChild(link);
-    if (window.storage) {
-      window.storage.get("tf11-remember").then(function(r) { if (r && r.value) { var s = JSON.parse(r.value); if (s.user) { setUser(s.user); setRemember(true); loadUserData(s.user); } } }).catch(function() {});
-      window.storage.get("tf11-signup-count", true).then(function(r) { if (r && r.value) setSignupCount(parseInt(r.value) || 0); }).catch(function() {});
-    }
+    try { var sc = localStorage.getItem("tf11-signup-count"); if (sc) setSignupCount(parseInt(sc) || 0); } catch(e) {}
+    var params = new URLSearchParams(window.location.search);
+    var pendingStrava = params.get('stravaConnected') === 'true';
+    var stravaErr = params.get('stravaError') === 'true';
+    if (pendingStrava || stravaErr) window.history.replaceState({}, '', window.location.pathname);
+    if (stravaErr) flash('Strava connection failed. Try again.');
+    var unsubscribe = onAuthStateChanged(auth, function(firebaseUser) {
+      if (firebaseUser) {
+        setUser(firebaseUser.email || '');
+        loadUserData(firebaseUser.uid);
+        if (pendingStrava) fetchStravaTokens(firebaseUser.uid);
+      }
+    });
+    return unsubscribe;
   }, []);
   useEffect(function() { if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
   function flash(m) { setToast(m); setTimeout(function() { setToast(""); }, 2500); }
+  function apiErrorMsg(e) {
+    var s = e && e.status;
+    if (s === 401) return "API key invalid or missing. Check your server configuration.";
+    if (s === 429) return "Rate limit reached. Wait a moment and try again.";
+    if (s === 400) return "Bad request sent to AI. Try adjusting your inputs.";
+    if (s >= 500) return "Anthropic service error. Try again shortly.";
+    return "Connection error. Check your internet and try again.";
+  }
   function getSport() { return SPORTS.find(function(s) { return s.id === (profile.sport || "triathlon"); }) || SPORTS[0]; }
   function hasDisc(d) { return getSport().disc.indexOf(d) !== -1; }
 
@@ -225,44 +131,104 @@ export default function App() {
     return s;
   }
 
-  function loadUserData(u) {
-    if (window.storage) {
-      window.storage.get("tf11-" + u).then(function(r) {
-        if (r && r.value) {
-          var d = JSON.parse(r.value);
-          if (d.profile) setProfile(d.profile);
-          if (d.program) setProgram(d.program);
-          if (d.workouts) setWorkouts(d.workouts);
-          if (d.sleep) setSleepLog(d.sleep);
-          if (d.food) setFoodLog(d.food);
-          if (d.sub) { var s = checkYearReset(d.sub); setSub(s); }
-          if (d.sms) setSmsSettings(d.sms);
-          if (d.weightLog) setWeightLog(d.weightLog);
-          if (d.hydration) setHydrationLog(d.hydration);
-          if (d.reviews) setReviews(d.reviews);
-          if (d.raceProofs) setRaceProofs(d.raceProofs);
-        }
-        setLoggedIn(true); loadReviews();
-      }).catch(function() { setLoggedIn(true); loadReviews(); });
-    } else { setLoggedIn(true); }
+  async function loadUserData(uid) {
+    try {
+      var snap = await getDoc(doc(db, 'users', uid));
+      if (snap.exists()) {
+        var d = snap.data();
+        if (d.profile) setProfile(d.profile);
+        if (d.program) setProgram(d.program);
+        if (d.workouts) setWorkouts(d.workouts);
+        if (d.sleep) setSleepLog(d.sleep);
+        if (d.food) setFoodLog(d.food);
+        if (d.sub) { var s = checkYearReset(d.sub); setSub(s); }
+        if (d.sms) setSmsSettings(d.sms);
+        if (d.weightLog) setWeightLog(d.weightLog);
+        if (d.hydration) setHydrationLog(d.hydration);
+        if (d.reviews) setReviews(d.reviews);
+        if (d.raceProofs) setRaceProofs(d.raceProofs);
+        if (d.strava) setStravaData(d.strava);
+      }
+    } catch(e) { console.error('Load failed:', e); }
+    setLoggedIn(true); setPage(""); loadReviews();
   }
-  function doLogin() {
-    if (!user.trim()) return;
-    if (remember && window.storage) window.storage.set("tf11-remember", JSON.stringify({ user: user.trim() })).catch(function() {});
-    loadUserData(user.trim());
+  async function doLogin() {
+    if (!user.trim() || !pw.trim()) return;
+    try {
+      await signInWithEmailAndPassword(auth, user.trim(), pw);
+    } catch (e) {
+      flash(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' ? 'Invalid email or password.' : 'Sign in failed. Try again.');
+    }
   }
-  function doLogout() { if (window.storage) window.storage.delete("tf11-remember").catch(function() {}); setLoggedIn(false); setMsgs([]); setRemember(false); }
+  function doLogout() { signOut(auth); setLoggedIn(false); setMsgs([]); }
   function doSave(p, pr, wo, sl, fd, sb, sm, wl, hy, rp) {
-    if (!window.storage) return;
-    window.storage.set("tf11-" + user.trim(), JSON.stringify({
+    var uid = auth.currentUser && auth.currentUser.uid;
+    if (!uid) return;
+    setDoc(doc(db, 'users', uid), {
       profile: p || profile, program: pr !== undefined ? pr : program,
       workouts: wo || workouts, sleep: sl || sleepLog,
       food: fd || foodLog, sub: sb || sub, sms: sm || smsSettings,
       weightLog: wl || weightLog, hydration: hy || hydrationLog,
       raceProofs: rp || raceProofs
-    })).catch(function() {});
+    }).catch(function(e) { console.error('Save failed:', e); });
   }
   function saveSub(newSub) { setSub(newSub); doSave(undefined, undefined, undefined, undefined, undefined, newSub); }
+  // ── Strava ──
+  function connectStrava() {
+    var uid = auth.currentUser && auth.currentUser.uid;
+    if (!uid) return;
+    window.location.href = '/api/strava/auth?uid=' + encodeURIComponent(uid);
+  }
+  async function fetchStravaTokens(uid) {
+    try {
+      var r = await fetch('/api/strava/tokens?uid=' + encodeURIComponent(uid));
+      if (!r.ok) return;
+      var tokens = await r.json();
+      var data = Object.assign({ connected: true }, tokens);
+      setStravaData(data);
+      await updateDoc(doc(db, 'users', uid), { strava: data });
+      flash('Strava connected! Tap "Sync Activities" to import workouts.');
+      setTab('profile');
+    } catch(e) { console.error('Strava token fetch failed:', e); }
+  }
+  async function disconnectStrava() {
+    var uid = auth.currentUser && auth.currentUser.uid;
+    if (!uid) return;
+    setStravaData(null);
+    await updateDoc(doc(db, 'users', uid), { strava: null });
+    flash('Strava disconnected.');
+  }
+  async function syncStravaActivities() {
+    if (!stravaData || syncBusy) return;
+    setSyncBusy(true);
+    try {
+      var r = await fetch('/api/strava/activities', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: stravaData.accessToken, refreshToken: stravaData.refreshToken, expiresAt: stravaData.expiresAt }),
+      });
+      var result = await r.json();
+      if (!r.ok) throw new Error(result.error || 'Sync failed');
+      var typeMap = { Run: 'Run', TrailRun: 'Run', VirtualRun: 'Run', Ride: 'Bike', VirtualRide: 'Bike', GravelRide: 'Bike', Swim: 'Swim', Workout: 'Workout', WeightTraining: 'Strength', Walk: 'Walk', Hike: 'Hike' };
+      var existing = new Set(workouts.filter(function(w) { return w.stravaId; }).map(function(w) { return w.stravaId; }));
+      var imported = (result.activities || []).filter(function(a) { return !existing.has(a.id); }).map(function(a) {
+        var mi = (a.distance / 1609.34).toFixed(1);
+        var mins = Math.floor(a.moving_time / 60);
+        var type = typeMap[a.type] || a.type;
+        return { id: Date.now() + a.id, stravaId: a.id, date: a.start_date.split('T')[0], text: type + ' — ' + mi + ' mi in ' + mins + 'min' + (a.average_heartrate ? ' @ ' + Math.round(a.average_heartrate) + 'bpm' : ''), done: true, source: 'strava' };
+      });
+      if (result.updatedTokens) {
+        var updated = Object.assign({}, stravaData, result.updatedTokens);
+        setStravaData(updated);
+        var uid = auth.currentUser && auth.currentUser.uid;
+        if (uid) updateDoc(doc(db, 'users', uid), { strava: updated });
+      }
+      if (imported.length === 0) { flash('No new activities to import.'); setSyncBusy(false); return; }
+      var up = workouts.concat(imported); up.sort(function(a, b) { return a.date.localeCompare(b.date); });
+      setWorkouts(up); doSave(undefined, undefined, up);
+      flash(imported.length + ' activities imported from Strava!');
+    } catch(e) { flash('Sync failed: ' + e.message); }
+    setSyncBusy(false);
+  }
   // ── Weight + Hydration ──
   function addWeight() { var w = parseFloat(wlWeight); if (isNaN(w)) return; var up = weightLog.filter(function(e) { return e.date !== wlDate; }).concat([{ date: wlDate, weight: w }]); up.sort(function(a, b) { return a.date.localeCompare(b.date); }); setWeightLog(up); setWlWeight(""); doSave(undefined, undefined, undefined, undefined, undefined, undefined, undefined, up); flash("Weight logged!"); }
   function addHydration() { var oz = parseInt(hydOz); if (isNaN(oz)) return; var existing = hydrationLog.find(function(e) { return e.date === hydDate; }); var up; if (existing) { up = hydrationLog.map(function(e) { return e.date === hydDate ? Object.assign({}, e, { oz: e.oz + oz }) : e; }); } else { up = hydrationLog.concat([{ date: hydDate, oz: oz }]); } up.sort(function(a, b) { return a.date.localeCompare(b.date); }); setHydrationLog(up); setHydOz(""); doSave(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, up); flash(oz + " oz added!"); }
@@ -316,31 +282,43 @@ export default function App() {
   }
   function incrementSignupCount() {
     var newCount = signupCount + 1; setSignupCount(newCount);
-    if (window.storage) { window.storage.set("tf11-signup-count", String(newCount), true).catch(function() {}); }
+    try { localStorage.setItem("tf11-signup-count", String(newCount)); } catch(e) {}
   }
-  function doSignupAndSubscribe(tier) {
-    if (!user.trim()) { flash("Enter a username."); return; }
-    // Check if promo gives free access
-    if (applyPromo(tier)) { incrementSignupCount(); if (remember && window.storage) window.storage.set("tf11-remember", JSON.stringify({ user: user.trim() })).catch(function() {}); loadUserData(user.trim()); return; }
-    // Normal subscribe
-    var discount = getDiscount();
-    var ns = Object.assign({}, sub, { tier: tier, trialStart: new Date().toISOString().split("T")[0], yearStart: new Date().getFullYear() });
-    if (discount > 0) { ns.discountPct = discount; ns.discountStart = new Date().toISOString().split("T")[0]; ns.discountMonths = 3; }
-    if (promoCode.trim()) ns.promoUsed = promoCode.trim().toUpperCase();
-    setSub(ns); incrementSignupCount();
-    if (remember && window.storage) window.storage.set("tf11-remember", JSON.stringify({ user: user.trim() })).catch(function() {});
-    loadUserData(user.trim());
-    // Save after login
-    setTimeout(function() { doSave(undefined, undefined, undefined, undefined, undefined, ns); }, 500);
-    if (tier === "trial") flash("7-day free trial started!");
-    else flash(getTier().name + " plan activated!" + (discount > 0 ? " " + discount + "% discount applied!" : ""));
+  async function doSignupAndSubscribe(tier) {
+    if (!user.trim() || !pw.trim()) { flash("Enter email and password."); return; }
+    try {
+      var cred = await createUserWithEmailAndPassword(auth, user.trim(), pw);
+      var discount = getDiscount();
+      var ns = Object.assign({}, sub, { tier: tier, trialStart: new Date().toISOString().split("T")[0], yearStart: new Date().getFullYear() });
+      var code = promoCode.trim().toUpperCase();
+      var promo = PROMO_CODES[code];
+      if (promo && promo.type === "free_month") {
+        ns.tier = promo.tier; ns.promoUsed = code;
+        ns.freeMonthEnd = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+      } else if (discount > 0) {
+        ns.discountPct = discount; ns.discountStart = new Date().toISOString().split("T")[0]; ns.discountMonths = 3;
+        if (code) ns.promoUsed = code;
+      }
+      setSub(ns); incrementSignupCount();
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        profile: profile, program: program, workouts: workouts, sleep: sleepLog,
+        food: foodLog, sub: ns, sms: smsSettings, weightLog: weightLog,
+        hydration: hydrationLog, raceProofs: raceProofs
+      });
+      if (tier === "trial") flash("7-day free trial started!");
+      else flash(getTier().name + " plan activated!" + (discount > 0 ? " " + discount + "% discount applied!" : ""));
+    } catch (e) {
+      if (e.code === 'auth/email-already-in-use') flash("Email already registered. Sign in instead.");
+      else if (e.code === 'auth/weak-password') flash("Password must be at least 6 characters.");
+      else flash("Sign up failed. Try again.");
+    }
   }
 
-  // ── Support Ticket (emails to jordanwiseman33@gmail.com) ──
+  // ── Support Ticket ──
   function submitSupport() {
     if (!supportSubject.trim() || !supportMsg.trim()) { flash("Fill in subject and message."); return; }
     // Create mailto link and open it (works in browser; in production use a serverless email function)
-    var mailto = "mailto:jordanwiseman33@gmail.com?subject=" + encodeURIComponent("[TriForge Support] " + supportSubject) + "&body=" + encodeURIComponent("From: " + user + "\n\n" + supportMsg + "\n\n---\nSent from TriForge app");
+    var mailto = "mailto:" + (import.meta.env.VITE_SUPPORT_EMAIL || "TriForgeTraining@gmail.com") + "?subject=" + encodeURIComponent("[TriForge Support] " + supportSubject) + "&body=" + encodeURIComponent("From: " + user + "\n\n" + supportMsg + "\n\n---\nSent from TriForge app");
     window.open(mailto, "_blank");
     setSupportSubject(""); setSupportMsg(""); flash("Support request opened in your email client!");
   }
@@ -351,11 +329,11 @@ export default function App() {
     var r = { user: user, stars: reviewStars, text: reviewText.trim(), date: new Date().toISOString().split("T")[0], id: Date.now() };
     var up = reviews.concat([r]); setReviews(up); setReviewText(""); setReviewStars(5);
     // Save to shared storage so all users can see
-    if (window.storage) { window.storage.set("tf11-reviews", JSON.stringify(up), true).catch(function() {}); }
+    try { localStorage.setItem("tf11-reviews", JSON.stringify(up)); } catch(e) {}
     flash("Review posted! Thank you.");
   }
   function loadReviews() {
-    if (window.storage) { window.storage.get("tf11-reviews", true).then(function(r) { if (r && r.value) setReviews(JSON.parse(r.value)); }).catch(function() {}); }
+    try { var rv = localStorage.getItem("tf11-reviews"); if (rv) setReviews(JSON.parse(rv)); } catch(e) {}
   }
 
   // ── Race Completion with Proof Upload + AI Verification ──
@@ -399,17 +377,20 @@ export default function App() {
     }
     messages[0].content.push({ type: "text", text: verifyPrompt });
 
-    fetch("https://api.anthropic.com/v1/messages", {
+    fetch("/api/claude", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 500, messages: messages })
-    }).then(function(r) { return r.json(); }).then(function(data) {
+      body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 500, messages: messages })
+    }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
       var text = (data.content || []).map(function(b) { return b.text || ""; }).join("");
       var result = { status: "needs_review", confidence: 50, reason: "Could not parse AI response." };
       try {
         var cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
         result = JSON.parse(cleaned);
+        if (!["verified", "needs_review", "rejected"].includes(result.status)) {
+          result.status = "needs_review";
+        }
       } catch (e) {
-        if (text.toLowerCase().indexOf("verified") !== -1) result = { status: "verified", confidence: 75, reason: text.substring(0, 200) };
+        // keep default needs_review — never infer status from raw text
       }
 
       var proof = {
@@ -437,8 +418,8 @@ export default function App() {
       }
 
       setProofRace(null); setProofImage(null); setProofUrl(""); setProofTime(""); setVerifying(false);
-    }).catch(function() {
-      setVerifying(false); flash("Verification error. Try again.");
+    }).catch(function(e) {
+      setVerifying(false); flash(apiErrorMsg(e));
     });
   }
 
@@ -468,13 +449,16 @@ export default function App() {
   function smsDaysLeft() { if (!smsSettings.trialStart) return SMS_TRIAL_DAYS; return Math.max(0, SMS_TRIAL_DAYS - Math.floor((new Date() - new Date(smsSettings.trialStart)) / 86400000)); }
   function isSmsTrialActive() { return smsSettings.enabled && !isPaid() && smsDaysLeft() > 0; }
   function isSmsActive() { return smsSettings.enabled && (isPaid() || smsDaysLeft() > 0); }
+  function isValidPhone(p) { return /^\+?[1-9]\d{6,14}$/.test(p.replace(/[\s\-().]/g, "")); }
   function toggleSms(phone, time) {
-    var ns = Object.assign({}, smsSettings, { enabled: true, phone: phone || smsSettings.phone, sendTime: time || smsSettings.sendTime });
+    var p = phone || smsSettings.phone;
+    if (!isValidPhone(p)) { flash("Enter a valid phone number (e.g. +1 555 123 4567)."); return; }
+    var ns = Object.assign({}, smsSettings, { enabled: true, phone: p, sendTime: time || smsSettings.sendTime });
     if (!ns.trialStart) ns.trialStart = new Date().toISOString().split("T")[0];
     setSmsSettings(ns); doSave(undefined, undefined, undefined, undefined, undefined, undefined, ns); flash("Daily texts activated!");
   }
   function disableSms() { var ns = Object.assign({}, smsSettings, { enabled: false }); setSmsSettings(ns); doSave(undefined, undefined, undefined, undefined, undefined, undefined, ns); flash("Daily texts disabled."); }
-  function saveSmsSettings(ns) { setSmsSettings(ns); doSave(undefined, undefined, undefined, undefined, undefined, undefined, ns); flash("Text settings saved!"); }
+  function saveSmsSettings(ns) { if (ns.phone && !isValidPhone(ns.phone)) { flash("Enter a valid phone number (e.g. +1 555 123 4567)."); return; } setSmsSettings(ns); doSave(undefined, undefined, undefined, undefined, undefined, undefined, ns); flash("Text settings saved!"); }
   function getTodayWorkout() { var today = new Date().toISOString().split("T")[0]; var wo = workouts.filter(function(w) { return w.date === today && !w.done; }); return wo.length > 0 ? wo.map(function(w) { return w.text; }).join(" + ") : "Rest day"; }
   // ── Swap Workouts ──
   function swapWorkouts(id1, id2) {
@@ -547,12 +531,12 @@ export default function App() {
     prompt += "\nGoal: " + bp.primaryGoal + (bp.secondaryGoal ? " + " + bp.secondaryGoal : "") + "\n";
     prompt += "\nFORMAT: Week 1 (dates)\\nMon - [workout]\\nTue - [workout]\\n...EVERY week. Miles. Specific paces. Race weeks marked. Plan overview at top.\n";
 
-    fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-opus-4-20250514", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }) }).then(function(r) { return r.json(); }).then(function(data) {
+    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_OPUS || "claude-opus-4-6", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
       var text = (data.content || []).map(function(b) { return b.text || ""; }).filter(Boolean).join("\n") || "Error.";
       setBuildResult(text); setBuildBusy(false);
       // Increment plans built
       var ns = Object.assign({}, sub, { plansBuilt: sub.plansBuilt + 1 }); saveSub(ns);
-    }).catch(function() { setBuildResult("Connection error."); setBuildBusy(false); });
+    }).catch(function(e) { setBuildResult(apiErrorMsg(e)); setBuildBusy(false); });
   }
 
   function loadBuiltPlan() {
@@ -574,7 +558,7 @@ export default function App() {
     if (hasDisc("run") && profile.run5k) sys += "Run 5k: " + profile.run5k + "\n";
     (profile.races || []).forEach(function(r) { var d = Math.ceil((new Date(r.date) - new Date()) / 86400000); sys += "Race: " + r.name + " " + d + "d\n"; });
     if (program) sys += "\nProgram:\n" + program.substring(0, 2000) + "\n";
-    fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: sys, messages: all.map(function(m) { return { role: m.role, content: m.content }; }) }) }).then(function(r) { return r.json(); }).then(function(data) { var reply = (data.content || []).map(function(b) { return b.text || ""; }).join("\n") || "No response."; setMsgs(all.concat([{ role: "assistant", content: reply }])); setChatBusy(false); }).catch(function() { setMsgs(all.concat([{ role: "assistant", content: "Connection error." }])); setChatBusy(false); });
+    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 1000, system: sys, messages: all.map(function(m) { return { role: m.role, content: m.content }; }) }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) { var reply = (data.content || []).map(function(b) { return b.text || ""; }).join("\n") || "No response."; setMsgs(all.concat([{ role: "assistant", content: reply }])); setChatBusy(false); }).catch(function(e) { setMsgs(all.concat([{ role: "assistant", content: apiErrorMsg(e) }])); setChatBusy(false); });
   }
 
   // ── Plan Modification via Coach (counts against modsUsed) ──
@@ -586,7 +570,7 @@ export default function App() {
     var modMsg = "MODIFICATION REQUEST: " + modRequest;
     var all = msgs.concat([{ role: "user", content: "PLAN MODIFICATION: " + modRequest }]);
     setMsgs(all); setModRequest("");
-    fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, system: sys, messages: [{ role: "user", content: modMsg }] }) }).then(function(r) { return r.json(); }).then(function(data) {
+    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 2000, system: sys, messages: [{ role: "user", content: modMsg }] }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
       var reply = (data.content || []).map(function(b) { return b.text || ""; }).join("\n") || "Error.";
       setMsgs(all.concat([{ role: "assistant", content: reply }]));
       // Apply to program and count mod
@@ -595,7 +579,7 @@ export default function App() {
       var ns = Object.assign({}, sub, { modsUsed: sub.modsUsed + 1 }); saveSub(ns);
       doSave(undefined, updated, p.length > 0 ? p : undefined, undefined, undefined, ns);
       setChatBusy(false); flash("Plan modified! (" + (ns.modsUsed) + "/" + getTier().maxMods + " used)");
-    }).catch(function() { setMsgs(all.concat([{ role: "assistant", content: "Connection error." }])); setChatBusy(false); });
+    }).catch(function(e) { setMsgs(all.concat([{ role: "assistant", content: apiErrorMsg(e) }])); setChatBusy(false); });
   }
 
   // Utils
@@ -626,13 +610,13 @@ export default function App() {
 
   // ═══ LOGIN ═══
   // ═══ TERMS PAGE ═══
-  if (page === "terms") { return <div style={{ minHeight: "100vh", background: bg, fontFamily: ff, padding: "40px 20px" }}><div style={{ maxWidth: 700, margin: "0 auto" }}><button onClick={function() { setPage(""); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer", marginBottom: 20 }}>Back</button><div style={{ fontFamily: hf, fontSize: 36, color: accent, letterSpacing: 3, marginBottom: 20 }}>TERMS OF SERVICE</div><div style={{ background: white, borderRadius: 14, padding: 28, border: "1px solid " + bdr, fontSize: 13, color: tM, lineHeight: 1.8 }}><p style={{ marginBottom: 16 }}><strong>Last updated:</strong> March 2026</p><p style={{ marginBottom: 16 }}><strong>1. Acceptance.</strong> By creating an account on TriForge Training ("the Service"), you agree to these Terms. If you do not agree, do not use the Service.</p><p style={{ marginBottom: 16 }}><strong>2. Service Description.</strong> TriForge provides AI-generated training plans, coaching chat, nutrition tracking, workout logging, and related features for endurance athletes. Plans are generated by artificial intelligence and are not a substitute for professional medical or coaching advice.</p><p style={{ marginBottom: 16 }}><strong>3. Subscriptions and Billing.</strong> Free Trial lasts 7 days. After the trial, a paid subscription (Basic $9.99/mo or Pro $16.99/mo) is required to access AI Plan Builder and AI Coach features. Daily Text Messages are an optional add-on at $3.99/mo. You may cancel at any time from your Profile page. Cancellation takes effect at the end of the current billing period.</p><p style={{ marginBottom: 16 }}><strong>4. Health Disclaimer.</strong> Training plans generated by TriForge are for informational purposes only. Always consult a physician before beginning any exercise program. TriForge is not responsible for injuries, health complications, or any adverse outcomes resulting from following AI-generated plans. You assume all risk associated with your training activities.</p><p style={{ marginBottom: 16 }}><strong>5. User Data.</strong> You retain ownership of all data you enter. We store your data securely using Firebase/Firestore. See our Privacy Policy for details on how we handle your information.</p><p style={{ marginBottom: 16 }}><strong>6. AI-Generated Content.</strong> Training plans and coaching responses are generated by AI (Claude by Anthropic). While we strive for accuracy, AI-generated content may contain errors. You should use your own judgment and consult professionals as needed.</p><p style={{ marginBottom: 16 }}><strong>7. Acceptable Use.</strong> You agree not to share your account, reverse engineer the Service, or use it for any unlawful purpose.</p><p style={{ marginBottom: 16 }}><strong>8. Limitation of Liability.</strong> TriForge Training is provided "as is" without warranty. We are not liable for any indirect, incidental, or consequential damages arising from use of the Service.</p><p style={{ marginBottom: 16 }}><strong>9. Changes.</strong> We may update these Terms at any time. Continued use after changes constitutes acceptance.</p><p><strong>10. Contact.</strong> Questions? Email support@triforgetraining.com</p></div></div></div>; }
+  if (page === "terms") { return <div style={{ minHeight: "100vh", background: bg, fontFamily: ff, padding: "40px 20px" }}><div style={{ maxWidth: 700, margin: "0 auto" }}><button onClick={function() { setPage(""); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer", marginBottom: 20 }}>Back</button><div style={{ fontFamily: hf, fontSize: 36, color: accent, letterSpacing: 3, marginBottom: 20 }}>TERMS OF SERVICE</div><div style={{ background: white, borderRadius: 14, padding: 28, border: "1px solid " + bdr, fontSize: 13, color: tM, lineHeight: 1.8 }}><p style={{ marginBottom: 16 }}><strong>Last updated:</strong> March 2026</p><p style={{ marginBottom: 16 }}><strong>1. Acceptance.</strong> By creating an account on TriForge Training ("the Service"), you agree to these Terms. If you do not agree, do not use the Service.</p><p style={{ marginBottom: 16 }}><strong>2. Service Description.</strong> TriForge provides AI-generated training plans, coaching chat, nutrition tracking, workout logging, and related features for endurance athletes. Plans are generated by artificial intelligence and are not a substitute for professional medical or coaching advice.</p><p style={{ marginBottom: 16 }}><strong>3. Subscriptions and Billing.</strong> Free Trial lasts 7 days. After the trial, a paid subscription (Basic $9.99/mo or Pro $16.99/mo) is required to access AI Plan Builder and AI Coach features. Daily Text Messages are an optional add-on at $3.99/mo. You may cancel at any time from your Profile page. Cancellation takes effect at the end of the current billing period.</p><p style={{ marginBottom: 16 }}><strong>4. Health Disclaimer.</strong> Training plans generated by TriForge are for informational purposes only. Always consult a physician before beginning any exercise program. TriForge is not responsible for injuries, health complications, or any adverse outcomes resulting from following AI-generated plans. You assume all risk associated with your training activities.</p><p style={{ marginBottom: 16 }}><strong>5. User Data.</strong> You retain ownership of all data you enter. We store your data securely using Firebase/Firestore. See our Privacy Policy for details on how we handle your information.</p><p style={{ marginBottom: 16 }}><strong>6. AI-Generated Content.</strong> Training plans and coaching responses are generated by AI (Claude by Anthropic). While we strive for accuracy, AI-generated content may contain errors. You should use your own judgment and consult professionals as needed.</p><p style={{ marginBottom: 16 }}><strong>7. Acceptable Use.</strong> You agree not to share your account, reverse engineer the Service, or use it for any unlawful purpose.</p><p style={{ marginBottom: 16 }}><strong>8. Limitation of Liability.</strong> TriForge Training is provided "as is" without warranty. We are not liable for any indirect, incidental, or consequential damages arising from use of the Service.</p><p style={{ marginBottom: 16 }}><strong>9. Changes.</strong> We may update these Terms at any time. Continued use after changes constitutes acceptance.</p><p><strong>10. Contact.</strong> Questions? Email TriForgeTraining@gmail.com</p></div></div></div>; }
 
   // ═══ PRIVACY PAGE ═══
-  if (page === "privacy") { return <div style={{ minHeight: "100vh", background: bg, fontFamily: ff, padding: "40px 20px" }}><div style={{ maxWidth: 700, margin: "0 auto" }}><button onClick={function() { setPage(""); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer", marginBottom: 20 }}>Back</button><div style={{ fontFamily: hf, fontSize: 36, color: accent, letterSpacing: 3, marginBottom: 20 }}>PRIVACY POLICY</div><div style={{ background: white, borderRadius: 14, padding: 28, border: "1px solid " + bdr, fontSize: 13, color: tM, lineHeight: 1.8 }}><p style={{ marginBottom: 16 }}><strong>Last updated:</strong> March 2026</p><p style={{ marginBottom: 16 }}><strong>1. Information We Collect.</strong> Account information (email, password), profile data (height, weight, age, fitness metrics), training data (workouts, nutrition, sleep, race schedule), phone number (if you opt into daily texts), and usage data.</p><p style={{ marginBottom: 16 }}><strong>2. How We Use It.</strong> To provide and personalize the Service, generate AI training plans, send daily text messages (if opted in), process payments, and improve the platform. We do not sell your personal data to third parties.</p><p style={{ marginBottom: 16 }}><strong>3. Data Storage.</strong> Your data is stored securely in Google Firebase/Firestore with encryption in transit and at rest. Only you can access your data through your authenticated account.</p><p style={{ marginBottom: 16 }}><strong>4. Third-Party Services.</strong> We use: Firebase (authentication and database), Anthropic (AI plan generation and coaching), Twilio (text messages, if opted in), Stripe (payment processing, when activated), and optionally Garmin Connect / Strava (if you connect your account). Each service has its own privacy policy.</p><p style={{ marginBottom: 16 }}><strong>5. AI Processing.</strong> When you use the Plan Builder or AI Coach, your profile and training data is sent to Anthropic's API to generate responses. This data is not stored by Anthropic beyond the API request.</p><p style={{ marginBottom: 16 }}><strong>6. Text Messages.</strong> If you opt in, we send one text message per day to your phone number. You can disable this at any time from your Profile. Standard message rates apply. We do not share your phone number.</p><p style={{ marginBottom: 16 }}><strong>7. Garmin / Strava.</strong> If you connect these services, we access your workout activity data (distance, time, heart rate). We do not post to your accounts or access data beyond what is needed for training sync.</p><p style={{ marginBottom: 16 }}><strong>8. Data Deletion.</strong> You can delete your account and all associated data by contacting support@triforgetraining.com. We will remove your data within 30 days.</p><p style={{ marginBottom: 16 }}><strong>9. Cookies.</strong> We use essential cookies for authentication. We do not use advertising cookies or third-party trackers.</p><p><strong>10. Contact.</strong> For privacy concerns, email support@triforgetraining.com</p></div></div></div>; }
+  if (page === "privacy") { return <div style={{ minHeight: "100vh", background: bg, fontFamily: ff, padding: "40px 20px" }}><div style={{ maxWidth: 700, margin: "0 auto" }}><button onClick={function() { setPage(""); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer", marginBottom: 20 }}>Back</button><div style={{ fontFamily: hf, fontSize: 36, color: accent, letterSpacing: 3, marginBottom: 20 }}>PRIVACY POLICY</div><div style={{ background: white, borderRadius: 14, padding: 28, border: "1px solid " + bdr, fontSize: 13, color: tM, lineHeight: 1.8 }}><p style={{ marginBottom: 16 }}><strong>Last updated:</strong> March 2026</p><p style={{ marginBottom: 16 }}><strong>1. Information We Collect.</strong> Account information (email, password), profile data (height, weight, age, fitness metrics), training data (workouts, nutrition, sleep, race schedule), phone number (if you opt into daily texts), and usage data.</p><p style={{ marginBottom: 16 }}><strong>2. How We Use It.</strong> To provide and personalize the Service, generate AI training plans, send daily text messages (if opted in), process payments, and improve the platform. We do not sell your personal data to third parties.</p><p style={{ marginBottom: 16 }}><strong>3. Data Storage.</strong> Your data is stored securely in Google Firebase/Firestore with encryption in transit and at rest. Only you can access your data through your authenticated account.</p><p style={{ marginBottom: 16 }}><strong>4. Third-Party Services.</strong> We use: Firebase (authentication and database), Anthropic (AI plan generation and coaching), Twilio (text messages, if opted in), and Stripe (payment processing, when activated). Each service has its own privacy policy.</p><p style={{ marginBottom: 16 }}><strong>5. AI Processing.</strong> When you use the Plan Builder or AI Coach, your profile and training data is sent to Anthropic's API to generate responses. This data is not stored by Anthropic beyond the API request.</p><p style={{ marginBottom: 16 }}><strong>6. Text Messages.</strong> If you opt in, we send one text message per day to your phone number. You can disable this at any time from your Profile. Standard message rates apply. We do not share your phone number.</p><p style={{ marginBottom: 16 }}><strong>7. Data Deletion.</strong> You can delete your account and all associated data by contacting TriForgeTraining@gmail.com. We will remove your data within 30 days.</p><p style={{ marginBottom: 16 }}><strong>8. Cookies.</strong> We use essential cookies for authentication. We do not use advertising cookies or third-party trackers.</p><p><strong>9. Contact.</strong> For privacy concerns, email TriForgeTraining@gmail.com</p></div></div></div>; }
 
   // ═══ FORGOT PASSWORD ═══
-  if (page === "forgot") { return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #E8ECFA 0%, #F5F6FA 50%, #EEF0F7 100%)", padding: 20, fontFamily: ff }}><div style={{ width: "100%", maxWidth: 380, padding: 40, background: white, borderRadius: 22, border: "1px solid " + bdr, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}><div style={{ textAlign: "center", marginBottom: 24 }}><Logo size={50} /><div style={{ fontFamily: hf, fontSize: 28, color: accent, letterSpacing: 3, marginTop: 8 }}>RESET PASSWORD</div></div><div style={{ fontSize: 13, color: tM, marginBottom: 16, lineHeight: 1.6 }}>Enter your email address and we will send you a link to reset your password.</div><div style={lblS}>Email</div><input style={Object.assign({}, inp, { marginBottom: 14 })} type="email" value={resetEmail} onChange={function(e) { setResetEmail(e.target.value); }} placeholder="you@email.com" /><button style={Object.assign({}, btnS, { width: "100%", marginBottom: 12 })} onClick={function() { if (resetEmail.trim()) { flash("Password reset email sent! Check your inbox. (Beta: no actual email sent)"); setTimeout(function() { setPage(""); }, 2000); } else { flash("Enter your email address."); } }}>SEND RESET LINK</button><button onClick={function() { setPage(""); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer", width: "100%", textAlign: "center" }}>Back to sign in</button></div></div>; }
+  if (page === "forgot") { return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #E8ECFA 0%, #F5F6FA 50%, #EEF0F7 100%)", padding: 20, fontFamily: ff }}><div style={{ width: "100%", maxWidth: 380, padding: 40, background: white, borderRadius: 22, border: "1px solid " + bdr, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}><div style={{ textAlign: "center", marginBottom: 24 }}><Logo size={50} /><div style={{ fontFamily: hf, fontSize: 28, color: accent, letterSpacing: 3, marginTop: 8 }}>RESET PASSWORD</div></div><div style={{ fontSize: 13, color: tM, marginBottom: 16, lineHeight: 1.6 }}>Enter your email address and we will send you a link to reset your password.</div><div style={lblS}>Email</div><input style={Object.assign({}, inp, { marginBottom: 14 })} type="email" value={resetEmail} onChange={function(e) { setResetEmail(e.target.value); }} placeholder="you@email.com" /><button style={Object.assign({}, btnS, { width: "100%", marginBottom: 12 })} onClick={async function() { if (!resetEmail.trim()) { flash("Enter your email address."); return; } try { await sendPasswordResetEmail(auth, resetEmail.trim()); flash("Password reset email sent! Check your inbox."); setTimeout(function() { setPage(""); }, 2000); } catch(e) { flash("Email not found. Check the address and try again."); } }}>SEND RESET LINK</button><button onClick={function() { setPage(""); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer", width: "100%", textAlign: "center" }}>Back to sign in</button></div></div>; }
 
   // ═══ SIGNUP PAGE (plan selection + promo) ═══
   if (page === "signup") { return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #E8ECFA 0%, #F5F6FA 50%, #EEF0F7 100%)", padding: 20, fontFamily: ff }}>
@@ -643,7 +627,7 @@ export default function App() {
       <div style={Object.assign({}, crd, { marginBottom: 16 })}>
         <div style={secS}>CREATE YOUR ACCOUNT</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <div><div style={lblS}>Username</div><input style={inp} value={user} onChange={function(e) { setUser(e.target.value); }} placeholder="Choose a username" /></div>
+          <div><div style={lblS}>Email</div><input style={inp} type="email" value={user} onChange={function(e) { setUser(e.target.value); }} placeholder="you@email.com" /></div>
           <div><div style={lblS}>Password</div><input style={inp} type="password" value={pw} onChange={function(e) { setPw(e.target.value); }} placeholder="Password" /></div>
         </div>
       </div>
@@ -696,7 +680,7 @@ export default function App() {
   </div>; }
 
   // ═══ LOGIN (existing users) ═══
-  if (page === "login") { return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #E8ECFA 0%, #F5F6FA 50%, #EEF0F7 100%)", padding: 20, fontFamily: ff }}><div style={{ width: "100%", maxWidth: 380, padding: 40, background: white, borderRadius: 22, border: "1px solid " + bdr, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}><div style={{ textAlign: "center", marginBottom: 32 }}><Logo size={70} /><div style={{ fontSize: 48, fontFamily: hf, color: accent, letterSpacing: 6, marginTop: 8 }}>TRIFORGE</div><div style={{ color: tL, fontSize: 12, letterSpacing: 2, marginTop: 2 }}>ENDURANCE TRAINING INTELLIGENCE</div></div><div style={lblS}>Username</div><input style={Object.assign({}, inp, { marginBottom: 12 })} value={user} onChange={function(e) { setUser(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") doLogin(); }} placeholder="Enter username" /><div style={lblS}>Password</div><input style={Object.assign({}, inp, { marginBottom: 8 })} type="password" value={pw} onChange={function(e) { setPw(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") doLogin(); }} placeholder="Password" /><div style={{ textAlign: "right", marginBottom: 12 }}><button onClick={function() { setPage("forgot"); }} style={{ background: "none", border: "none", color: accentL, fontSize: 12, cursor: "pointer" }}>Forgot password?</button></div><div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}><div onClick={function() { setRemember(!remember); }} style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid " + (remember ? accent : bdr), background: remember ? accent : white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{remember ? <span style={{ color: white, fontSize: 12, fontWeight: 700 }}>Y</span> : null}</div><span style={{ fontSize: 13, color: tM, cursor: "pointer" }} onClick={function() { setRemember(!remember); }}>Remember me</span></div><button style={Object.assign({}, btnS, { width: "100%" })} onClick={doLogin}>SIGN IN</button><div style={{ textAlign: "center", marginTop: 16 }}><button onClick={function() { setPage("signup"); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer" }}>New here? Create an account</button></div><div style={{ textAlign: "center", marginTop: 10, fontSize: 11, color: tL }}><button onClick={function() { setPage("terms"); }} style={{ background: "none", border: "none", color: tL, cursor: "pointer", fontSize: 11 }}>Terms</button><span style={{ margin: "0 6px" }}>|</span><button onClick={function() { setPage("privacy"); }} style={{ background: "none", border: "none", color: tL, cursor: "pointer", fontSize: 11 }}>Privacy</button></div></div></div>; }
+  if (page === "login") { return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #E8ECFA 0%, #F5F6FA 50%, #EEF0F7 100%)", padding: 20, fontFamily: ff }}><div style={{ width: "100%", maxWidth: 380, padding: 40, background: white, borderRadius: 22, border: "1px solid " + bdr, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}><div style={{ textAlign: "center", marginBottom: 32 }}><Logo size={70} /><div style={{ fontSize: 48, fontFamily: hf, color: accent, letterSpacing: 6, marginTop: 8 }}>TRIFORGE</div><div style={{ color: tL, fontSize: 12, letterSpacing: 2, marginTop: 2 }}>ENDURANCE TRAINING INTELLIGENCE</div></div><div style={lblS}>Email</div><input style={Object.assign({}, inp, { marginBottom: 12 })} type="email" value={user} onChange={function(e) { setUser(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") doLogin(); }} placeholder="you@email.com" /><div style={lblS}>Password</div><input style={Object.assign({}, inp, { marginBottom: 8 })} type="password" value={pw} onChange={function(e) { setPw(e.target.value); }} onKeyDown={function(e) { if (e.key === "Enter") doLogin(); }} placeholder="Password" /><div style={{ textAlign: "right", marginBottom: 12 }}><button onClick={function() { setPage("forgot"); }} style={{ background: "none", border: "none", color: accentL, fontSize: 12, cursor: "pointer" }}>Forgot password?</button></div><div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}><div onClick={function() { setRemember(!remember); }} style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid " + (remember ? accent : bdr), background: remember ? accent : white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{remember ? <span style={{ color: white, fontSize: 12, fontWeight: 700 }}>Y</span> : null}</div><span style={{ fontSize: 13, color: tM, cursor: "pointer" }} onClick={function() { setRemember(!remember); }}>Remember me</span></div><button style={Object.assign({}, btnS, { width: "100%" })} onClick={doLogin}>SIGN IN</button><div style={{ textAlign: "center", marginTop: 16 }}><button onClick={function() { setPage("signup"); }} style={{ background: "none", border: "none", color: accentL, fontSize: 13, cursor: "pointer" }}>New here? Create an account</button></div><div style={{ textAlign: "center", marginTop: 10, fontSize: 11, color: tL }}><button onClick={function() { setPage("terms"); }} style={{ background: "none", border: "none", color: tL, cursor: "pointer", fontSize: 11 }}>Terms</button><span style={{ margin: "0 6px" }}>|</span><button onClick={function() { setPage("privacy"); }} style={{ background: "none", border: "none", color: tL, cursor: "pointer", fontSize: 11 }}>Privacy</button></div></div></div>; }
 
   // ═══ WELCOME LANDING (first thing users see) ═══
   if (!loggedIn) { return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0A0E1A 0%, #111827 50%, #0A0E1A 100%)", color: "#E2E8F0", fontFamily: ff }}>
@@ -936,42 +920,32 @@ export default function App() {
           </div> : null}
         </div> : null}
 
-        {/* Garmin / Strava Integration */}
-        <div style={Object.assign({}, crd, { marginTop: 16 })}>
-          <div style={secS}>CONNECTED APPS</div>
-          <div style={{ fontSize: 12, color: tM, marginBottom: 14 }}>Connect your devices to auto-import completed workouts. No more manual logging.</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div style={{ padding: 16, borderRadius: 12, border: "2px solid " + (garminConnected ? "#22C55E" : bdr), background: garminConnected ? "#F0FDF4" : white }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <div><div style={{ fontFamily: hf, fontSize: 18, color: tD, letterSpacing: 1 }}>GARMIN</div><div style={{ fontSize: 11, color: tL }}>Connect, Forerunner, Edge, Fenix</div></div>
-                {garminConnected ? <span style={{ color: "#22C55E", fontSize: 12, fontWeight: 700 }}>LINKED</span> : null}
-              </div>
-              {garminConnected ? <div>
-                <div style={{ fontSize: 11, color: "#22C55E", marginBottom: 8 }}>Auto-syncing workouts from your Garmin device.</div>
-                <button onClick={function() { setGarminConnected(false); flash("Garmin disconnected."); }} style={{ background: "none", border: "1px solid " + bdr, color: tL, borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: "pointer" }}>Disconnect</button>
-              </div> : <div>
-                <button onClick={function() { setGarminConnected(true); flash("Garmin connected! (Beta: simulated)"); }} style={Object.assign({}, btnS, { background: "#1A73E8", fontSize: 11, padding: "8px 16px", letterSpacing: 1 })}>CONNECT GARMIN</button>
-                <div style={{ fontSize: 10, color: tL, marginTop: 6 }}>Opens Garmin Connect OAuth. Beta: simulated.</div>
-              </div>}
-            </div>
-            <div style={{ padding: 16, borderRadius: 12, border: "2px solid " + (stravaConnected ? "#FC4C02" : bdr), background: stravaConnected ? "#FFF7ED" : white }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <div><div style={{ fontFamily: hf, fontSize: 18, color: tD, letterSpacing: 1 }}>STRAVA</div><div style={{ fontSize: 11, color: tL }}>Activities, segments, routes</div></div>
-                {stravaConnected ? <span style={{ color: "#FC4C02", fontSize: 12, fontWeight: 700 }}>LINKED</span> : null}
-              </div>
-              {stravaConnected ? <div>
-                <div style={{ fontSize: 11, color: "#FC4C02", marginBottom: 8 }}>Auto-syncing activities from Strava.</div>
-                <button onClick={function() { setStravaConnected(false); flash("Strava disconnected."); }} style={{ background: "none", border: "1px solid " + bdr, color: tL, borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: "pointer" }}>Disconnect</button>
-              </div> : <div>
-                <button onClick={function() { setStravaConnected(true); flash("Strava connected! (Beta: simulated)"); }} style={Object.assign({}, btnS, { background: "#FC4C02", fontSize: 11, padding: "8px 16px", letterSpacing: 1 })}>CONNECT STRAVA</button>
-                <div style={{ fontSize: 10, color: tL, marginTop: 6 }}>Opens Strava OAuth. Beta: simulated.</div>
-              </div>}
-            </div>
-          </div>
-          <div style={{ fontSize: 11, color: tL, marginTop: 10 }}>When connected, completed workouts auto-import with distance, time, pace, and heart rate data. Works with workout result logging.</div>
-        </div>
 
         <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: tL }}><button onClick={function() { setPage("terms"); }} style={{ background: "none", border: "none", color: tL, cursor: "pointer", fontSize: 11 }}>Terms</button><span style={{ margin: "0 6px" }}>|</span><button onClick={function() { setPage("privacy"); }} style={{ background: "none", border: "none", color: tL, cursor: "pointer", fontSize: 11 }}>Privacy</button></div>
+        {/* Connected Apps */}
+        <div style={Object.assign({}, crd, { marginTop: 16 })}>
+          <div style={secS}>CONNECTED APPS</div>
+          <div style={{ padding: 16, borderRadius: 12, border: "2px solid " + (stravaData && stravaData.connected ? "#FC4C02" : bdr), background: stravaData && stravaData.connected ? "#FFF7ED" : white }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div>
+                <div style={{ fontFamily: hf, fontSize: 18, color: tD, letterSpacing: 1 }}>STRAVA</div>
+                <div style={{ fontSize: 11, color: tL }}>Activities, segments, routes</div>
+              </div>
+              {stravaData && stravaData.connected ? <span style={{ color: "#FC4C02", fontSize: 12, fontWeight: 700 }}>LINKED</span> : null}
+            </div>
+            {stravaData && stravaData.connected ? <div>
+              {stravaData.athleteName ? <div style={{ fontSize: 12, color: tM, marginBottom: 8 }}>Connected as <strong>{stravaData.athleteName}</strong></div> : null}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={syncStravaActivities} disabled={syncBusy} style={Object.assign({}, btnS, { background: "#FC4C02", fontSize: 11, padding: "8px 16px", letterSpacing: 1, opacity: syncBusy ? 0.6 : 1 })}>{syncBusy ? "SYNCING..." : "SYNC ACTIVITIES"}</button>
+                <button onClick={disconnectStrava} style={{ background: "none", border: "1px solid " + bdr, color: tL, borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: "pointer" }}>Disconnect</button>
+              </div>
+            </div> : <div>
+              <button onClick={connectStrava} style={Object.assign({}, btnS, { background: "#FC4C02", fontSize: 11, padding: "8px 16px", letterSpacing: 1 })}>CONNECT STRAVA</button>
+              <div style={{ fontSize: 10, color: tL, marginTop: 6 }}>Imports your recent activities as completed workouts.</div>
+            </div>}
+          </div>
+        </div>
+
         <button style={Object.assign({}, btnS, { marginTop: 14 })} onClick={saveProfile}>SAVE PROFILE</button>
       </div>}
 
@@ -1195,8 +1169,7 @@ export default function App() {
             { q: "What counts as a plan modification?", a: "When the AI Coach rewrites actual training weeks in your program. Regular chat questions are free and unlimited." },
             { q: "How do daily text messages work?", a: "Enable in Profile. You get one text per day with your scheduled workout and a motivational message. Texts sync with any workout swaps you make." },
             { q: "How do I earn a free month?", a: "Complete 4 races in a calendar year while subscribed. Mark races complete in your Profile under Race Reward Program. Choose a free month of your current plan or upgrade at the cost difference." },
-            { q: "How do I connect my Garmin or Strava?", a: "Go to Profile, scroll to Connected Apps, and click Connect. Your completed workouts will auto-import." },
-            { q: "Can I cancel my subscription?", a: "Yes, any time from Profile. Your data stays saved. You revert to Free Trial access." }
+{ q: "Can I cancel my subscription?", a: "Yes, any time from Profile. Your data stays saved. You revert to Free Trial access." }
           ].map(function(faq, i) {
             return <div key={i} style={{ padding: "12px 0", borderBottom: i < 5 ? "1px solid " + bdr : "none" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: tD, marginBottom: 4 }}>{faq.q}</div>
@@ -1218,14 +1191,13 @@ export default function App() {
             <option value="Plan Builder Issue">Plan Builder Not Working</option>
             <option value="AI Coach Issue">AI Coach Issue</option>
             <option value="Text Message Issue">Daily Texts Not Arriving</option>
-            <option value="Garmin/Strava Issue">Garmin/Strava Connection Issue</option>
-            <option value="Feature Request">Feature Request</option>
+<option value="Feature Request">Feature Request</option>
             <option value="Other">Other</option>
           </select>
           <div style={lblS}>Describe Your Issue</div>
           <textarea style={Object.assign({}, inp, { resize: "vertical", lineHeight: 1.6, marginBottom: 12 })} rows={4} value={supportMsg} onChange={function(e) { setSupportMsg(e.target.value); }} placeholder="Tell us what happened, what you expected, and any steps to reproduce the issue..." />
           <button onClick={submitSupport} style={Object.assign({}, btnS, { background: "#EF4444" })}>SEND TO SUPPORT</button>
-          <div style={{ fontSize: 11, color: tL, marginTop: 8 }}>This opens your email client addressed to our support team. You can also email us directly at jordanwiseman33@gmail.com</div>
+          <div style={{ fontSize: 11, color: tL, marginTop: 8 }}>This opens your email client addressed to our support team. You can also email us directly at TriForgeTraining@gmail.com</div>
         </div>
       </div>}
 
