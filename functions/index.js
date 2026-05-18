@@ -30,7 +30,7 @@ exports.anthropicProxy = onRequest(
           "Content-Type": "application/json",
           "x-api-key": anthropicKey.value(),
           "anthropic-version": "2023-06-01",
-          "anthropic-beta": "web-search-1",
+          "anthropic-beta": "web-search-2025-03-05",
         },
         body: JSON.stringify(req.body),
       });

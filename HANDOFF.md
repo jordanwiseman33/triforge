@@ -5,15 +5,6 @@ _Last updated: 2026-05-18_
 
 ## OPEN
 
-### Bug: invalid `anthropic-beta` header in Firebase Functions
-**File:** `functions/index.js:33`
-
-`anthropic-beta: "web-search-1"` is not a valid beta identifier — Anthropic will reject any web-search-enabled request with a 400. `server.js:26` correctly uses `web-search-2025-03-05`.
-
-**Fix:** Change the header to `web-search-2025-03-05` (or align with whatever the Express proxy is using). Only matters if you actually deploy to Firebase Functions; the Express proxy is currently the path used by `npm run dev`.
-
----
-
 ### Stale default model identifiers
 **File:** `src/App.jsx:534, 573` (and `.env.example:5-6`)
 
@@ -48,10 +39,10 @@ No setup/run/deploy instructions checked in. New environment = guess.
 
 ---
 
-### Only one git commit on the branch
-`git log` shows a single `TriForge v1` commit. All Firebase, proxy, Strava, and verification work is uncommitted history.
+### Sparse git history; no CI
+Two commits exist (`TriForge v1` and a 2026-05-18 catch-up snapshot). Going forward, commit incrementally so `git blame` and rollback are useful. No CI is configured either.
 
-**Fix:** Start committing incrementally so rollback is possible. No CI is configured yet either.
+**Fix:** Commit per logical change. Add a minimal GitHub Actions or similar workflow that at least runs `npm run build` on PRs.
 
 ---
 
@@ -67,3 +58,4 @@ No setup/run/deploy instructions checked in. New environment = guess.
 - ✅ **`.env.example`** — All required vars documented (Anthropic, Firebase, Strava, models, support email).
 - ✅ **Strava integration** — Full OAuth + activity fetch + token refresh in `server.js:46-136`.
 - ✅ **Support email consolidated** — All source references now point to `TriForgeTraining@gmail.com` as the working interim address. Swap to `support@triforgetraining.com` once domain mail is set up on the production domain.
+- ✅ **Firebase Functions `anthropic-beta` header** — Corrected from `web-search-1` to `web-search-2025-03-05` so the Firebase Functions proxy matches `server.js`.
