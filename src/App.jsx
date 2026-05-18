@@ -102,11 +102,27 @@ export default function App() {
   function flash(m) { setToast(m); setTimeout(function() { setToast(""); }, 2500); }
   function apiErrorMsg(e) {
     var s = e && e.status;
+    var d = e && e.detail ? " " + e.detail : "";
     if (s === 401) return "API key invalid or missing. Check your server configuration.";
     if (s === 429) return "Rate limit reached. Wait a moment and try again.";
-    if (s === 400) return "Bad request sent to AI. Try adjusting your inputs.";
+    if (s === 400) return "Bad request sent to AI." + d + " Try adjusting your inputs.";
     if (s >= 500) return "Anthropic service error. Try again shortly.";
     return "Connection error. Check your internet and try again.";
+  }
+  function handleApiResponse(r) {
+    if (r.ok) return r.json();
+    return r.text().then(function(body) {
+      var detail = "";
+      try {
+        var parsed = JSON.parse(body);
+        detail = (parsed.error && parsed.error.message) || parsed.message || "";
+      } catch (_) {}
+      console.error("Anthropic API " + r.status + ":", detail || body);
+      var err = new Error("API error");
+      err.status = r.status;
+      err.detail = detail;
+      throw err;
+    });
   }
   function getSport() { return SPORTS.find(function(s) { return s.id === (profile.sport || "triathlon"); }) || SPORTS[0]; }
   function hasDisc(d) { return getSport().disc.indexOf(d) !== -1; }
@@ -380,7 +396,7 @@ export default function App() {
     fetch("/api/claude", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 500, messages: messages })
-    }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
+    }).then(handleApiResponse).then(function(data) {
       var text = (data.content || []).map(function(b) { return b.text || ""; }).join("");
       var result = { status: "needs_review", confidence: 50, reason: "Could not parse AI response." };
       try {
@@ -531,7 +547,7 @@ export default function App() {
     prompt += "\nGoal: " + bp.primaryGoal + (bp.secondaryGoal ? " + " + bp.secondaryGoal : "") + "\n";
     prompt += "\nFORMAT: Week 1 (dates)\\nMon - [workout]\\nTue - [workout]\\n...EVERY week. Miles. Specific paces. Race weeks marked. Plan overview at top.\n";
 
-    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_OPUS || "claude-opus-4-7", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
+    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_OPUS || "claude-opus-4-7", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }) }).then(handleApiResponse).then(function(data) {
       var text = (data.content || []).map(function(b) { return b.text || ""; }).filter(Boolean).join("\n") || "Error.";
       setBuildResult(text); setBuildBusy(false);
       // Increment plans built
@@ -558,7 +574,7 @@ export default function App() {
     if (hasDisc("run") && profile.run5k) sys += "Run 5k: " + profile.run5k + "\n";
     (profile.races || []).forEach(function(r) { var d = Math.ceil((new Date(r.date) - new Date()) / 86400000); sys += "Race: " + r.name + " " + d + "d\n"; });
     if (program) sys += "\nProgram:\n" + program.substring(0, 2000) + "\n";
-    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 1000, system: sys, messages: all.map(function(m) { return { role: m.role, content: m.content }; }) }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) { var reply = (data.content || []).map(function(b) { return b.text || ""; }).join("\n") || "No response."; setMsgs(all.concat([{ role: "assistant", content: reply }])); setChatBusy(false); }).catch(function(e) { setMsgs(all.concat([{ role: "assistant", content: apiErrorMsg(e) }])); setChatBusy(false); });
+    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 1000, system: sys, messages: all.map(function(m) { return { role: m.role, content: m.content }; }) }) }).then(handleApiResponse).then(function(data) { var reply = (data.content || []).map(function(b) { return b.text || ""; }).join("\n") || "No response."; setMsgs(all.concat([{ role: "assistant", content: reply }])); setChatBusy(false); }).catch(function(e) { setMsgs(all.concat([{ role: "assistant", content: apiErrorMsg(e) }])); setChatBusy(false); });
   }
 
   // ── Plan Modification via Coach (counts against modsUsed) ──
@@ -570,7 +586,7 @@ export default function App() {
     var modMsg = "MODIFICATION REQUEST: " + modRequest;
     var all = msgs.concat([{ role: "user", content: "PLAN MODIFICATION: " + modRequest }]);
     setMsgs(all); setModRequest("");
-    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 2000, system: sys, messages: [{ role: "user", content: modMsg }] }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
+    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_SONNET || "claude-sonnet-4-6", max_tokens: 2000, system: sys, messages: [{ role: "user", content: modMsg }] }) }).then(handleApiResponse).then(function(data) {
       var reply = (data.content || []).map(function(b) { return b.text || ""; }).join("\n") || "Error.";
       setMsgs(all.concat([{ role: "assistant", content: reply }]));
       // Apply to program and count mod

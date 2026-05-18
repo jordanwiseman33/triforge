@@ -5,15 +5,6 @@ _Last updated: 2026-05-18_
 
 ## OPEN
 
-### Generic API error messages
-**File:** `src/App.jsx` — fetch chains around lines 534, 573
-
-Failures throw `new Error('API error')` with `err.status` attached, but the user-facing message doesn't differentiate 401 vs 429 vs 500. Still hard to debug a real outage.
-
-**Fix:** Branch on `err.status` and surface specific messages ("rate-limited, try again in a minute" vs "auth failed, contact support").
-
----
-
 ### Support form is still a `mailto:`
 **File:** `src/App.jsx:321`
 
@@ -51,3 +42,4 @@ Two commits exist (`TriForge v1` and a 2026-05-18 catch-up snapshot). Going forw
 - ✅ **Support email consolidated** — All source references now point to `TriForgeTraining@gmail.com` as the working interim address. Swap to `support@triforgetraining.com` once domain mail is set up on the production domain.
 - ✅ **Firebase Functions `anthropic-beta` header** — Corrected from `web-search-1` to `web-search-2025-03-05` so the Firebase Functions proxy matches `server.js`.
 - ✅ **Opus model fallback bumped to 4.7** — `src/App.jsx:534` and `.env.example` now default to `claude-opus-4-7`. Sonnet stays at `claude-sonnet-4-6` (current latest).
+- ✅ **API error handling** — `apiErrorMsg` was already branching on 400/401/429/5xx, but no caller read the response body. Added `handleApiResponse` helper that reads the body on `!r.ok`, logs Anthropic's error message via `console.error`, attaches it as `detail`, and surfaces it in the 400 user message. Replaced four duplicated `if (!r.ok)` blocks at the four `/api/claude` callsites.
