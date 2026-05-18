@@ -5,15 +5,6 @@ _Last updated: 2026-05-18_
 
 ## OPEN
 
-### Stale default model identifiers
-**File:** `src/App.jsx:534, 573` (and `.env.example:5-6`)
-
-Fallback models are `claude-opus-4-6` / `claude-sonnet-4-6`. Current latest is **Opus 4.7** (`claude-opus-4-7`) and **Sonnet 4.6** (`claude-sonnet-4-6`). Opus calls fall back to a non-latest model when `VITE_MODEL_OPUS` isn't set.
-
-**Fix:** Bump the fallback constant to `claude-opus-4-7`, or set `VITE_MODEL_OPUS=claude-opus-4-7` in `.env`.
-
----
-
 ### Generic API error messages
 **File:** `src/App.jsx` — fetch chains around lines 534, 573
 
@@ -59,3 +50,4 @@ Two commits exist (`TriForge v1` and a 2026-05-18 catch-up snapshot). Going forw
 - ✅ **Strava integration** — Full OAuth + activity fetch + token refresh in `server.js:46-136`.
 - ✅ **Support email consolidated** — All source references now point to `TriForgeTraining@gmail.com` as the working interim address. Swap to `support@triforgetraining.com` once domain mail is set up on the production domain.
 - ✅ **Firebase Functions `anthropic-beta` header** — Corrected from `web-search-1` to `web-search-2025-03-05` so the Firebase Functions proxy matches `server.js`.
+- ✅ **Opus model fallback bumped to 4.7** — `src/App.jsx:534` and `.env.example` now default to `claude-opus-4-7`. Sonnet stays at `claude-sonnet-4-6` (current latest).

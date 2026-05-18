@@ -531,7 +531,7 @@ export default function App() {
     prompt += "\nGoal: " + bp.primaryGoal + (bp.secondaryGoal ? " + " + bp.secondaryGoal : "") + "\n";
     prompt += "\nFORMAT: Week 1 (dates)\\nMon - [workout]\\nTue - [workout]\\n...EVERY week. Miles. Specific paces. Race weeks marked. Plan overview at top.\n";
 
-    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_OPUS || "claude-opus-4-6", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
+    fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: import.meta.env.VITE_MODEL_OPUS || "claude-opus-4-7", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }) }).then(function(r) { if (!r.ok) { var err = new Error('API error'); err.status = r.status; throw err; } return r.json(); }).then(function(data) {
       var text = (data.content || []).map(function(b) { return b.text || ""; }).filter(Boolean).join("\n") || "Error.";
       setBuildResult(text); setBuildBusy(false);
       // Increment plans built
